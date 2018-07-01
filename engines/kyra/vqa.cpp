@@ -41,6 +41,8 @@
 #include "graphics/palette.h"
 #include "graphics/surface.h"
 
+#include "video/mve_decoder.h"
+
 namespace Kyra {
 
 static uint32 readTag(Common::SeekableReadStream *stream) {
@@ -593,7 +595,7 @@ VQAMovie::VQAMovie(KyraEngine_v1 *vm, OSystem *system) {
 	_system = system;
 	_vm = vm;
 	_screen = _vm->screen();
-	_decoder = new VQADecoder();
+	_decoder = new Video::MVEDecoder();
 }
 
 VQAMovie::~VQAMovie() {
@@ -602,6 +604,7 @@ VQAMovie::~VQAMovie() {
 }
 
 bool VQAMovie::open(const char *filename) {
+  filename = "TREKINTS.MVE";
 	if (_file.open(filename)) {
 		return true;
 	}

@@ -24,6 +24,7 @@
 #define KYRA_VQA_H
 
 #include "video/video_decoder.h"
+#include "video/mve_decoder.h"
 #include "common/file.h"
 #include "common/rational.h"
 
@@ -152,7 +153,7 @@ private:
 	OSystem *_system;
 	KyraEngine_v1 *_vm;
 	Screen *_screen;
-	VQADecoder *_decoder;
+	Video::MVEDecoder *_decoder;
 	Common::File _file;
 };
 
