@@ -104,27 +104,27 @@ void MVEDecoder::readNextPacket() {
 		uint16 size = _stream->readUint16LE();
 		uint16 type = _stream->readUint16LE();
 
-debug("Chunk type %d, size %d", type, size);
+		debug(3, "Chunk type %d, size %d", type, size);
 
 		switch(type) {
 		case kChunkInitializeAudio:
-			debug("Initialize Audio");
+			debug(4, "Initialize Audio");
 			break;
 		case kChunkAudio:
-			debug("Audio Chunk");
+			debug(4, "Audio Chunk");
 			break;
 		case kChunkInitializeVideo:
-			debug("Initialize Video");
+			debug(4, "Initialize Video");
 			break;
 		case kChunkVideo:
-			debug("Video Chunk");
+			debug(4, "Video Chunk");
 			break;
 		case kChunkShutdown:
-			debug("Shutdown");
+			debug(4, "Shutdown");
 			break;
 		case kChunkEnd:
 			// End Chunk
-			debug("End");
+			debug(4, "End");
 			break;
 		default:
 			warning("MVEDecoder::readNextChunk: Unknown chunk type %d", type);
@@ -157,24 +157,23 @@ void MVEDecoder::parseChunk(Common::SeekableReadStream *chunk) {
 
 		switch(opcode) {
 		case kOpcodeEndOfStream:
-			debug("kOpcodeEndOfStream");
+			debug(5, "kOpcodeEndOfStream");
 			return;
 
 		case kOpcodeEndOfChunk:
-			debug("kOpcodeEndOfChunk");
+			debug(5, "kOpcodeEndOfChunk");
 			return;
 
 		case kOpcodeCreateTimer: {
-			debug("kOpcodeCreateTimer");
+			debug(5, "kOpcodeCreateTimer");
 
 			uint32 timerRate = chunk->readUint32LE();
 			uint16 timerSubdivision = chunk->readUint16LE();
 
-			Common::Rational frameRate(1000000 * timerSubdivision, timerRate);
-			frameRate.debugPrint(0);
+			Common::Rational frameRate((timerRate * timerSubdivision), 1000);
 
-			//_videoTrack = new MVEDecoder::MVEVideoTrack(_videoWidth, _videoHeight, frameRate);
-			//addTrack(_videoTrack);
+			_videoTrack = new MVEDecoder::MVEVideoTrack(_videoWidth, _videoHeight, frameRate);
+			addTrack(_videoTrack);
 
 
 
@@ -182,7 +181,7 @@ void MVEDecoder::parseChunk(Common::SeekableReadStream *chunk) {
 		}
 			
 		case kOpcodeInitializeAudioBuffers:
-			debug("kOpcodeInitialzeAudioBufers");
+			debug("kOpcodeInitialzeAudioBuffers");
 			break;
 
 		case kOpcodeStartStopAudio:

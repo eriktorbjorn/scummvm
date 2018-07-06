@@ -64,12 +64,12 @@ private:
 		bool _endOfTrack;
 	};
 
-	class MVEAudioTrack : public MVETrack, AudioTrack {
+	class MVEAudioTrack : public MVETrack, public AudioTrack {
 	public:
 		MVEAudioTrack(Audio::Mixer::SoundType soundType);
 	};
 
-	class MVEVideoTrack : public MVETrack, FixedRateVideoTrack {
+	class MVEVideoTrack : public MVETrack, public FixedRateVideoTrack {
 	public:
 		MVEVideoTrack(uint16 width, uint16 height, Common::Rational frameRate);
 		~MVEVideoTrack();
