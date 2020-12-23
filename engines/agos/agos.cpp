@@ -36,6 +36,7 @@
 
 #include "backends/audiocd/audiocd.h"
 
+#include "graphics/font.h"
 #include "graphics/surface.h"
 
 #include "audio/mididrv.h"
@@ -107,6 +108,19 @@ AGOSEngine_PuzzlePack::AGOSEngine_PuzzlePack(OSystem *system, const AGOSGameDesc
 
 	_oopsValid = false;
 	_gameTime = 0;
+
+	// Nosferatu 23. I have no idea where this font is supposed to come
+	// from. I don't see it included among the game data files, and I don't
+	// think it's a standard Windows font.
+	_font = Graphics::loadTTFFontFromArchive("LiberationSans-Regular.ttf", 16);
+
+	// Arial Narrow 16. So this should probably be Liberation Sans Narrow.
+	_fontA = Graphics::loadTTFFontFromArchive("LiberationSans-Regular.ttf", 16);
+}
+
+AGOSEngine_PuzzlePack::~AGOSEngine_PuzzlePack() {
+	delete _font;
+	delete _fontA;
 }
 #endif
 

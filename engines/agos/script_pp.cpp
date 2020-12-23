@@ -24,9 +24,14 @@
 
 #ifdef ENABLE_AGOS2
 
+#include "common/events.h"
 #include "common/system.h"
 
+#include "graphics/font.h"
+#include "graphics/surface.h"
+
 #include "agos/agos.h"
+#include "agos/sound.h"
 
 namespace AGOS {
 
@@ -290,6 +295,41 @@ void AGOSEngine_PuzzlePack::executeOpcode(int opcode) {
 	(this->*op) ();
 }
 
+void AGOSEngine_PuzzlePack::getHiScoreName() {
+	_nickName = "";
+	debug("getHiScoreName");
+}
+
+void AGOSEngine_PuzzlePack::printNickName() {
+	double minDiff = 500;
+	int c = -1;
+
+	// The desired colour is (0x8C, 0x5A, 0x10). Find a close match in the
+	// current palette.
+
+	for (int i = 0; i < 768; i += 3) {
+		int r = _currentPalette[i];
+		int g = _currentPalette[i + 1];
+		int b = _currentPalette[i + 2];
+
+		int rDiff = ABS(0x8C - r);
+		int gDiff = ABS(0x5A - g);
+		int bDiff = ABS(0x10 - b);
+
+		int diff = sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+
+		if (diff < minDiff) {
+			minDiff = diff;
+			c = i / 3;
+		}
+	}
+
+	// NoPatience or Jumble, or everything else
+	int y = getBitFlag(110) ? 390 : 347;
+
+	_font->drawString(_backGroundBuf, _nickName, 240, y, 178, c);
+}
+
 // -----------------------------------------------------------------------
 // Puzzle Pack Opcodes
 // -----------------------------------------------------------------------
@@ -393,12 +433,72 @@ void AGOSEngine_PuzzlePack::opp_loadUserGame() {
 
 	// NoPatience or Jumble
 	if (getBitFlag(110)) {
-		//getHiScoreName();
+		getHiScoreName();
 		return;
 	}
 
-	// XXX
-	loadGame(genSaveName(1));
+	Common::Rect rBackGround(232, 340, 400, 372);
+	Common::Rect rCopy(0, 0, 168, 32);
+
+	Graphics::Surface copyBuf;
+	copyBuf.create(rBackGround.width(), rBackGround.height(), Graphics::PixelFormat::createFormatCLUT8());
+
+	copyBuf.copyRectToSurface(*_backGroundBuf, 0, 0, rBackGround);
+
+	bool clearBuffer = true;
+
+	if (_nickName.size()) {
+		printNickName();
+	} else {
+		clearBuffer = false;
+	}
+
+	_gameTime = 0;
+	_keyPressed.reset();
+
+	while (true) {
+		if (shouldQuit())
+			break;
+
+		if (_leftButtonDown || _rightButtonDown) {
+			if (_mouse.x > 390 && _mouse.x < 480 && _mouse.y > 336 && _mouse.y < 380) {
+				loadSound(1, 0, 0, Sound::TYPE_SFX);
+				break;
+			}
+		} else if (_keyPressed.ascii && !(_keyPressed.flags & (Common::KBD_CTRL | Common::KBD_ALT | Common::KBD_META))) {
+			Common::KeyCode keycode = _keyPressed.keycode;
+			uint16 ascii = _keyPressed.ascii;
+
+			_keyPressed.reset();
+			loadSound(2, 0, 0, Sound::TYPE_SFX);
+			if (keycode == Common::KEYCODE_RETURN)
+				break;
+			else if (keycode == Common::KEYCODE_BACKSPACE) {
+				_backGroundBuf->copyRectToSurface(copyBuf, rBackGround.left, rBackGround.top, rCopy);
+				if (clearBuffer) {
+					_nickName.clear();
+					clearBuffer = false;
+				} else if (_nickName.size() > 0) {
+					_nickName.deleteLastChar();
+					printNickName();
+				}
+			} else {
+				clearBuffer = false;
+				if (_nickName.size() < 10) {
+					_nickName += toupper(ascii);
+					printNickName();
+				}
+			}
+		}
+		delay(10);
+	}
+
+	copyBuf.free();
+
+	if (!shouldQuit()) {
+		// XXX
+		loadGame(genSaveName(1));
+	}
 }
 
 void AGOSEngine_PuzzlePack::opp_playTune() {

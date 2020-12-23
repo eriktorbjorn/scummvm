@@ -33,6 +33,7 @@
 #include "common/stack.h"
 #include "common/util.h"
 #include "audio/mixer.h"
+#include "graphics/fonts/ttf.h"
 
 #include "agos/vga.h"
 #include "agos/detection.h"
@@ -2082,7 +2083,7 @@ protected:
 class AGOSEngine_PuzzlePack : public AGOSEngine_Feeble {
 public:
 	AGOSEngine_PuzzlePack(OSystem *system, const AGOSGameDescription *gd);
-	//~AGOSEngine_PuzzlePack();
+	~AGOSEngine_PuzzlePack() override;
 
 	void setupGame() override;
 	void setupOpcodes() override;
@@ -2121,6 +2122,9 @@ protected:
 	bool _oopsValid;
 	uint32 _gameTime;
 
+	Graphics::Font *_font;
+	Graphics::Font *_fontA;
+
 	void initMouse() override;
 	void handleMouseMoved() override;
 	void drawMousePointer() override;
@@ -2134,7 +2138,11 @@ protected:
 
 	void printInfoText(const char *itemText);
 
+	Common::String _nickName;
 	Common::String genSaveName(int slot) const override;
+
+	void getHiScoreName();
+	void printNickName();
 };
 
 
