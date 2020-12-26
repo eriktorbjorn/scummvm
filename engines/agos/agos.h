@@ -2125,6 +2125,8 @@ protected:
 	Graphics::Font *_font;
 	Graphics::Font *_fontA;
 
+	Graphics::Surface *_backupSurface;
+
 	void initMouse() override;
 	void handleMouseMoved() override;
 	void drawMousePointer() override;
@@ -2143,6 +2145,10 @@ protected:
 
 	void getHiScoreName();
 	void printNickName();
+
+	void createBackupSurface(int x1, int y1, int x2, int y2);
+	void restoreBackupSurface(int x, int y);
+	void freeBackupSurface();
 };
 
 

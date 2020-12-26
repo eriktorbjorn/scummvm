@@ -108,6 +108,7 @@ AGOSEngine_PuzzlePack::AGOSEngine_PuzzlePack(OSystem *system, const AGOSGameDesc
 
 	_oopsValid = false;
 	_gameTime = 0;
+	_nickName = "";
 
 	// Nosferatu 23. I have no idea where this font is supposed to come
 	// from. I don't see it included among the game data files, and I don't
@@ -116,11 +117,14 @@ AGOSEngine_PuzzlePack::AGOSEngine_PuzzlePack(OSystem *system, const AGOSGameDesc
 
 	// Arial Narrow 16. So this should probably be Liberation Sans Narrow.
 	_fontA = Graphics::loadTTFFontFromArchive("LiberationSans-Regular.ttf", 16);
+
+	_backupSurface = new Graphics::Surface();
 }
 
 AGOSEngine_PuzzlePack::~AGOSEngine_PuzzlePack() {
 	delete _font;
 	delete _fontA;
+	delete _backupSurface;
 }
 #endif
 

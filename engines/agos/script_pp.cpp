@@ -297,7 +297,46 @@ void AGOSEngine_PuzzlePack::executeOpcode(int opcode) {
 
 void AGOSEngine_PuzzlePack::getHiScoreName() {
 	_nickName = "";
-	debug("getHiScoreName");
+
+	_keyPressed.reset();
+
+	createBackupSurface(232, 385, 400, 417);
+
+	while (true) {
+		if (shouldQuit())
+			break;
+
+		if (_leftButtonDown || _rightButtonDown) {
+			if (_mouse.x > 390 && _mouse.x < 481 && _mouse.y > 378 && _mouse.y < 427) {
+				loadSound(1, 0, 0, Sound::TYPE_SFX);
+				break;
+			}
+
+		} else if (_keyPressed.ascii && !(_keyPressed.flags & (Common::KBD_CTRL | Common::KBD_ALT | Common::KBD_META))) {
+			Common::KeyCode keycode = _keyPressed.keycode;
+			uint16 ascii = _keyPressed.ascii;
+
+			_keyPressed.reset();
+			loadSound(2, 0, 0, Sound::TYPE_SFX);
+			if (keycode == Common::KEYCODE_RETURN) {
+				if (_nickName.size() > 0)
+					break;
+			} else if (keycode == Common::KEYCODE_BACKSPACE) {
+				if (_nickName.size() > 0) {
+					restoreBackupSurface(232, 340);
+					_nickName.deleteLastChar();
+					printNickName();
+				}
+			} else {
+				if (_nickName.size() < 10) {
+					_nickName += toupper(ascii);
+					printNickName();
+				}
+			}
+		}
+	}
+
+	freeBackupSurface();
 }
 
 void AGOSEngine_PuzzlePack::printNickName() {
@@ -328,6 +367,38 @@ void AGOSEngine_PuzzlePack::printNickName() {
 	int y = getBitFlag(110) ? 390 : 347;
 
 	_font->drawString(_backGroundBuf, _nickName, 240, y, 178, c);
+}
+
+// The original used a full-screen surface to be able to restore the screen
+// background when erasing text. But from what I can see, it should be
+// sufficient with something smaller and simpler here.
+
+void AGOSEngine_PuzzlePack::createBackupSurface(int x1, int y1, int x2, int y2) {
+	_backupSurface->create(x2 - x1, y2 - y1, Graphics::PixelFormat::createFormatCLUT8());
+
+	Common::Rect copyRect;
+
+	copyRect.top = y1;
+	copyRect.bottom = y2;
+	copyRect.left = x1;
+	copyRect.right = x2;
+
+	_backupSurface->copyRectToSurface(*_backGroundBuf, 0, 0, copyRect);
+}
+
+void AGOSEngine_PuzzlePack::restoreBackupSurface(int x, int y) {
+	Common::Rect copyRect;
+
+	copyRect.top = 0;
+	copyRect.bottom = _backupSurface->h;
+	copyRect.left = 0;
+	copyRect.right = _backupSurface->w;
+
+	_backGroundBuf->copyRectToSurface(*_backupSurface, x, y, copyRect);
+}
+
+void AGOSEngine_PuzzlePack::freeBackupSurface() {
+	_backupSurface->free();
 }
 
 // -----------------------------------------------------------------------
@@ -437,14 +508,6 @@ void AGOSEngine_PuzzlePack::opp_loadUserGame() {
 		return;
 	}
 
-	Common::Rect rBackGround(232, 340, 400, 372);
-	Common::Rect rCopy(0, 0, 168, 32);
-
-	Graphics::Surface copyBuf;
-	copyBuf.create(rBackGround.width(), rBackGround.height(), Graphics::PixelFormat::createFormatCLUT8());
-
-	copyBuf.copyRectToSurface(*_backGroundBuf, 0, 0, rBackGround);
-
 	bool clearBuffer = true;
 
 	if (_nickName.size()) {
@@ -455,6 +518,8 @@ void AGOSEngine_PuzzlePack::opp_loadUserGame() {
 
 	_gameTime = 0;
 	_keyPressed.reset();
+
+	createBackupSurface(232, 340, 400, 372);
 
 	while (true) {
 		if (shouldQuit())
@@ -471,10 +536,11 @@ void AGOSEngine_PuzzlePack::opp_loadUserGame() {
 
 			_keyPressed.reset();
 			loadSound(2, 0, 0, Sound::TYPE_SFX);
-			if (keycode == Common::KEYCODE_RETURN)
-				break;
-			else if (keycode == Common::KEYCODE_BACKSPACE) {
-				_backGroundBuf->copyRectToSurface(copyBuf, rBackGround.left, rBackGround.top, rCopy);
+			if (keycode == Common::KEYCODE_RETURN) {
+				if (_nickName.size() > 0)
+					break;
+			} else if (keycode == Common::KEYCODE_BACKSPACE) {
+				restoreBackupSurface(232, 340);
 				if (clearBuffer) {
 					_nickName.clear();
 					clearBuffer = false;
@@ -493,7 +559,7 @@ void AGOSEngine_PuzzlePack::opp_loadUserGame() {
 		delay(10);
 	}
 
-	copyBuf.free();
+	freeBackupSurface();
 
 	if (!shouldQuit()) {
 		// XXX
