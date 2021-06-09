@@ -22,6 +22,7 @@
 
 #include "common/scummsys.h"
 #include "common/archive.h"
+#include "common/macresman.h"
 #include "common/textconsole.h"
 #include "mads/mads.h"
 #include "mads/resources.h"
@@ -45,7 +46,9 @@ private:
 		uint32 _size;
 
 		HagEntry() : _offset(0), _size(0) {}
-		HagEntry(Common::String resourceName, uint32 offset, uint32 size)
+		HagEntry(Common::String resourceName, uint32 offset, uint32 size
+
+)
 			: _resourceName(resourceName), _offset(offset), _size(size) {
 		}
 	};
@@ -62,6 +65,13 @@ private:
 	 * Load the index of all the game's HAG files
 	 */
 	void loadIndex(MADSEngine *vm);
+
+	/**
+	 * Load the index of all the game's Mac resource files
+	 */
+	void loadMacIndex(MADSEngine *vm);
+
+	bool isNumberedSectionResource(uint32 tag, uint16 id, char &prefix, int &number, char *suffix);
 
 	/**
 	 * Given a resource name, opens up the correct HAG file and returns whether
@@ -92,7 +102,12 @@ public:
 const char *const MADSCONCAT_STRING = "MADSCONCAT";
 
 HagArchive::HagArchive(MADSEngine *vm) {
-	loadIndex(vm);
+	if (vm->getGameID() == GType_RexNebular && vm->getPlatform() == Common::kPlatformMacintosh)
+		loadMacIndex(vm);
+	else
+		loadIndex(vm);
+
+	Common::ArchiveMemberList list;
 }
 
 HagArchive::~HagArchive() {
@@ -135,13 +150,21 @@ Common::SeekableReadStream *HagArchive::createReadStreamForMember(const Common::
 
 	if (getHeaderEntry(name, hagIndex, hagEntry)) {
 		// Entry found. If the correct file is not already open, open it
-		Common::File f;
-		if (!f.open(hagIndex._filename))
-			error("Could not open HAG file");
+		if (false) {
+			Common::File f;
+			if (!f.open(hagIndex._filename))
+				error("Could not open HAG file");
 
-		// Return a new stream for the specific resource
-		f.seek(hagEntry._offset);
-		return f.readStream(hagEntry._size);
+			// Return a new stream for the specific resource
+			f.seek(hagEntry._offset);
+			return f.readStream(hagEntry._size);
+		} else {
+			Common::MacResManager resource;
+			if (!resource.open(hagIndex._filename))
+				error("Could not open resource file");
+			// Return a new stream for the specific resource
+			return resource.getResource(hagEntry._offset, hagEntry._size);
+		}
 	}
 
 	return nullptr;
@@ -205,6 +228,268 @@ void HagArchive::loadIndex(MADSEngine *vm) {
 	}
 }
 
+void HagArchive::loadMacIndex(MADSEngine *vm) {
+	Common::MacResManager resman;
+	Common::MacResTagArray tagArray;
+	Common::MacResIDArray idArray;
+	char name[14];
+	bool validResource;
+	uint i, j, k;
+
+	HagIndex globalIndex;
+	globalIndex._filename = "Rex Global Data";
+
+	if (!resman.open(globalIndex._filename))
+		error("Could not open %s", globalIndex._filename.c_str());
+
+	tagArray = resman.getResTagArray();
+
+	for (j = 0; j < tagArray.size(); j++) {
+		idArray = resman.getResIDArray(tagArray[j]);
+		for (k = 0; k < idArray.size(); k++) {
+			validResource = true;
+
+			switch (tagArray[j]) {
+			case MKTAG('A', 'i', ' ', ' '):
+				sprintf(name, "I%c.AA", idArray[k] - 1000);
+				break;
+			case MKTAG('B', 't', 's', 'p'):
+				strcpy(name, "BTSPIN.SS");
+				break;
+			case MKTAG('C', 'R', 'E', 'D'):
+				strcpy(name, "CREDITS.TXR");
+				break;
+			case MKTAG('D', 'a', 'b', 'a'):
+				if (idArray[k] == 17746) {
+					strcpy(name, "ERRORS.DB");
+				} else if (idArray[k] == 19791) {
+					strcpy(name, "MODULES.DB");
+				} else {
+					validResource = false;
+					debug("Unknown resource: Daba %d", idArray[k]);
+				}
+				break;
+			case MKTAG('E', 'n', 'd', 'i'):
+				sprintf(name, "ENDING%c.TXR", idArray[k]);
+				break;
+			case MKTAG('G', 'R', 'D', '1'):
+				sprintf(name, "GRD1_%c.SS", idArray[k]);
+				break;
+			case MKTAG('G', 'R', 'D', '2'):
+				sprintf(name, "GRD2_%c.SS", idArray[k]);
+				break;
+			case MKTAG('G', 'R', 'D', 'R'):
+				sprintf(name, "GRDRC2_%c.SS", idArray[k]);
+				break;
+			case MKTAG('H', 'o', 'g', 'a'):
+				strcpy(name, "HOGANUS.DAT");
+				break;
+			case MKTAG('O', 'b', 'j', 'e'):
+				strcpy(name, "OBJECTS.DAT");
+				break;
+			case MKTAG('O', 'b', 's', 'i'):
+				sprintf(name, "OB%03dI.SS", idArray[k]);
+				break;
+			case MKTAG('O', 'b', 's', 's'):
+				sprintf(name, "OB%03d.SS", idArray[k]);
+				break;
+			case MKTAG('Q', 'u', 'o', 't'):
+				strcpy(name, "QUOTES.DAT");
+				break;
+			case MKTAG('R', 'e', 'x', 'h'):
+				strcpy(name, "REXHAND.SS");
+				break;
+			case MKTAG('R', 'M', 'R', 'C'):
+				sprintf(name, "RXMRC_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'M', 'R', 'D'):
+				sprintf(name, "RXMRD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'M', 'R', 'O'):
+				sprintf(name, "RXMRO_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'C', 'D'):
+				sprintf(name, "ROXCD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'C', 'L'):
+				sprintf(name, "ROXCL_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'R', 'C'):
+				sprintf(name, "ROXRC_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'R', 'D'):
+				sprintf(name, "ROXRD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'X', '_'):
+				sprintf(name, "ROX_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'X', 'B'):
+				sprintf(name, "ROXBD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'O', 'X', 'H'):
+				strcpy(name, "ROXHAND.SS");
+				break;
+			case MKTAG('R', 'O', 'X', 'T'):
+				sprintf(name, "ROXTP_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'S', 'W', '_'):
+				sprintf(name, "RXSW_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'S', 'W', 'R'):
+				sprintf(name, "RXSWRC_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'B', 'O'):
+				sprintf(name, "RXBOT_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'C', 'D'):
+				sprintf(name, "RXCD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'C', 'L'):
+				sprintf(name, "RXCL_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'K', 'I'):
+				sprintf(name, "RXKIC_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'M', '_'):
+				sprintf(name, "RXM_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'M', 'B'):
+				sprintf(name, "RXMBD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'M', 'S'):
+				sprintf(name, "RXMSU_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'M', 'T'):
+				sprintf(name, "RXMTP_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'R', 'C'):
+				sprintf(name, "RXRC_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'R', 'D'):
+				sprintf(name, "RXRD_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'T', 'H'):
+				sprintf(name, "RXTH_%c.SS", idArray[k]);
+				break;
+			case MKTAG('R', 'X', 'T', 'Y'):
+				sprintf(name, "RXTY_%c.SS", idArray[k]);
+				break;
+			case MKTAG('V', 'o', 'c', 'a'):
+				strcpy(name, "VOCAB.DAT");
+				break;
+			case MKTAG('W', 'a', 'r', 'n'):
+				sprintf(name, "WARN%c.DAT", idArray[k]);
+				break;
+			default:
+				validResource = false;
+				debug("Unknown global resource %s %d", tag2str(tagArray[j]), idArray[k]);
+				break;
+			}
+
+			if (validResource) {
+				globalIndex._entries.push_back(HagEntry(name, tagArray[j], idArray[k]));
+			}
+		}
+	}
+
+	resman.close();
+	_index.push_back(globalIndex);
+
+	const char *sectionNames[] = {
+		"Rex Section I Data",
+		"Rex Section II Data",
+		"Rex Section III Data",
+		"Rex Section IV Data",
+		"Rex Section V Data",
+		"Rex Section VI Data",
+		"Rex Section VII Data",
+		"Rex Section VIII Data",
+		"Rex Section IX Data"
+	};
+
+	for (i = 0; i < ARRAYSIZE(sectionNames); i++) {
+		if (!resman.open(sectionNames[i]))
+			error("Could not open %s", sectionNames[i]);
+
+		HagIndex hagIndex;
+		hagIndex._filename = sectionNames[i];
+
+		tagArray = resman.getResTagArray();
+		for (j = 0; j < tagArray.size(); j++) {
+			idArray = resman.getResIDArray(tagArray[j]);
+
+			for (k = 0; k < idArray.size(); k++) {
+				validResource = true;
+
+				switch (tagArray[j]) {
+				case MKTAG('R', 'a', 'r', 't'):
+					sprintf(name, "RM%03d.ART", idArray[k]);
+					break;
+				case MKTAG('R', 'd', 'a', 't'):
+					sprintf(name, "RM%03d.DAT", idArray[k]);
+					break;
+				case MKTAG('R', 'h', 'o', 't'):
+					sprintf(name, "RM%03d.HH", idArray[k]);
+					break;
+				default:
+					char prefix;
+					int number;
+					char suffix[3];
+
+					if (isNumberedSectionResource(tagArray[j], idArray[k], prefix, number, suffix)) {
+						sprintf(name, "RM%03d%s.%c%c", number, suffix, prefix, prefix);
+					} else {
+						validResource = false;
+						debug("Unknown resource: %s %s %d", sectionNames[i], tag2str(tagArray[j]), idArray[k]);
+					}
+					break;
+				}
+
+				if (validResource) {
+					hagIndex._entries.push_back(HagEntry(name, tagArray[j], idArray[k]));
+				}
+			}
+		}
+
+		resman.close();
+		_index.push_back(hagIndex);
+	}
+}
+
+bool HagArchive::isNumberedSectionResource(uint32 tag, uint16 id, char &prefix, int &number, char *suffix) {
+	prefix = (tag >> 24) & 0xFF;
+
+	if (prefix == 'A' || prefix == 'S') {
+		byte digits[3];
+
+		digits[0] = (tag >> 16) & 0xFF;
+		digits[1] = (tag >> 8) & 0xFF;
+		digits[2] = tag & 0xFF;
+
+		if (Common::isDigit(digits[0]) && Common::isDigit(digits[1]) && Common::isDigit(digits[2])) {
+			number = 100 * (digits[0] - '0') + 10 * (digits[1] - '0') + (digits[2] - '0');
+
+			int i = 0;
+
+			if (id & 0xFF00)
+				suffix[i++] = (id >> 8) & 0xFF;
+			if (id & 0xFF)
+				suffix[i++] = id & 0xFF;
+
+			suffix[i] = '\0';
+
+			for (i = 0; suffix[i]; i++) {
+				if (!Common::isUpper(suffix[i]) && !Common::isDigit(suffix[i]))
+					return false;
+			}
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool HagArchive::getHeaderEntry(const Common::String &resourceName,
 		HagIndex &hagIndex, HagEntry &hagEntry) const {
 	Common::String resName = resourceName;
@@ -233,18 +518,44 @@ bool HagArchive::getHeaderEntry(const Common::String &resourceName,
 
 Common::String HagArchive::getResourceFilename(const Common::String &resourceName) const {
 	ResourceType resType = getResourceType(resourceName);
-	Common::String outputFilename = "GLOBAL.HAG";
+	Common::String outputFilename;
 
-	if ((resType == RESTYPE_ROOM) || (resType == RESTYPE_SC)) {
-		int value = atoi(resourceName.c_str() + 2);
-		int hagFileNum = (resType == RESTYPE_ROOM) ? value / 100 : value;
+	if (false) {
+		outputFilename = "GLOBAL.HAG";
 
-		if (hagFileNum >= 0)
-			outputFilename = Common::String::format("SECTION%d.HAG", hagFileNum);
+		if ((resType == RESTYPE_ROOM) || (resType == RESTYPE_SC)) {
+			int value = atoi(resourceName.c_str() + 2);
+			int hagFileNum = (resType == RESTYPE_ROOM) ? value / 100 : value;
+
+			if (hagFileNum >= 0)
+				outputFilename = Common::String::format("SECTION%d.HAG", hagFileNum);
+		}
+
+		if (resType == RESTYPE_SPEECH)
+			outputFilename = "SPEECH.HAG";
+	} else {
+		outputFilename = "Rex Global Data";
+
+		if ((resType == RESTYPE_ROOM) || (resType == RESTYPE_SC)) {
+			const char *sectionNames[] = {
+				"Rex Section I Data",
+				"Rex Section II Data",
+				"Rex Section III Data",
+				"Rex Section VI Data",
+				"Rex Section V Data",
+				"Rex Section VI Data",
+				"Rex Section VII Data",
+				"Rex Section VIII Data",
+				"Rex Section IX Data"
+			};
+
+			int value = atoi(resourceName.c_str() + 2);
+			int hagFileNum = (resType == RESTYPE_ROOM) ? value / 100 : value;
+
+			if (hagFileNum > 0)
+				outputFilename = sectionNames[hagFileNum - 1];
+		}
 	}
-
-	if (resType == RESTYPE_SPEECH)
-		outputFilename = "SPEECH.HAG";
 
 	return outputFilename;
 }
