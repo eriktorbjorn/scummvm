@@ -2874,10 +2874,46 @@ void ScummEngine::runBootscript() {
 	int args[NUM_SCRIPT_LOCAL];
 	memset(args, 0, sizeof(args));
 	args[0] = _bootParam;
+
 	if (_game.id == GID_MANIAC && (_game.features & GF_DEMO) && (_game.platform != Common::kPlatformC64))
 		runScript(9, 0, 0, args);
 	else
 		runScript(1, 0, 0, args);
+
+	if (_bootParam == 0 && _game.id == GID_MONKEY2 && _game.platform == Common::kPlatformMacintosh) {
+		// The version that was distributed as part of the LucasArts
+		// Mac CD Game Pack II has cut the part of the boot script that
+		// start the copy protection and difficulty selection screen.
+		//
+		// This is odd, because other games in those collections retain
+		// their copy protection screens.
+		//
+		// The version that was distributed on floppies still have the
+		// copy protection screen. We tell them apart by the size of
+		// their boot scripts.
+		//
+		// The original script runs the copy protection and difficulty
+		// selection partway through the boot script. We do it after to
+		// give it time to initialize the difficulty variables.
+
+		int bootScriptSize = getResourceSize(rtScript, 1);
+
+		if (bootScriptSize == 6718) {
+			Monkey2MacDifficultyDialog dialog;
+			runDialog(dialog);
+
+			int difficulty = dialog.getSelectedDifficulty();
+
+			if (difficulty == -1)
+				difficulty = 0;
+
+			writeVar(33335, difficulty); // Bit 567
+			writeVar(98, difficulty);
+
+			const char *str = difficulty ? "Easy Mode" : "Regular Mode";
+			loadPtrToResource(rtString, 26, (const byte *)str);
+		}
+	}
 }
 
 #ifdef ENABLE_HE

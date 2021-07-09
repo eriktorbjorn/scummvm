@@ -210,6 +210,25 @@ private:
 	int _difficulty;
 };
 
+/**
+ * Difficuty selection dialog for one of the Mac versions of Monkey Island 2.
+ */
+class Monkey2MacDifficultyDialog : public GUI::Dialog {
+public:
+	Monkey2MacDifficultyDialog();
+
+	int getSelectedDifficulty() const { return _difficulty; }
+	void handleCommand(GUI::CommandSender *sender,  uint32 cmd, uint32 data) override;
+
+private:
+	enum {
+		kRegularMode = 'REGM',
+		kEasyMode = 'EASM'
+	};
+
+	int _difficulty;
+};
+
 } // End of namespace Scumm
 
 #endif

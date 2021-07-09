@@ -696,4 +696,36 @@ void LoomTownsDifficultyDialog::handleCommand(GUI::CommandSender *sender, uint32
 	}
 }
 
+Monkey2MacDifficultyDialog::Monkey2MacDifficultyDialog()
+	: Dialog("Monkey2MacDifficultyDialog"), _difficulty(-1) {
+
+	GUI::StaticTextWidget *text = new GUI::StaticTextWidget(this, "Monkey2MacDifficultyDialog.Description", _("Select One"));
+	text->setAlign(Graphics::kTextAlignCenter);
+
+	new GUI::ButtonWidget(this, "Monkey2MacDifficultyDialog.Regular", _("Monkey Island 2"), Common::U32String(), kRegularMode);
+	new GUI::ButtonWidget(this, "Monkey2MacDifficultyDialog.Easy", _("Monkey 2 Lite"), Common::U32String(), kEasyMode);
+
+	text = new GUI::StaticTextWidget(this, "Monkey2MacDifficultyDialog.RegularDescription", _("\"I want it all! All the puzzles! All the work!\""));
+	text->setAlign(Graphics::kTextAlignLeft);
+
+	text = new GUI::StaticTextWidget(this, "Monkey2MacDifficultyDialog.EasyDescription", _("\"I've never played an adventure game before. I'm scared.\""));
+	text->setAlign(Graphics::kTextAlignLeft);
+}
+
+void Monkey2MacDifficultyDialog::handleCommand(GUI::CommandSender *sender, uint32 cmd, uint32 data) {
+	switch (cmd) {
+	case kRegularMode:
+		_difficulty = 0;
+		close();
+		break;
+	case kEasyMode:
+		_difficulty = 1;
+		close();
+		break;
+	default:
+		GUI::Dialog::handleCommand(sender, cmd, data);
+	}
+}
+
+
 } // End of namespace Scumm
