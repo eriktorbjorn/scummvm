@@ -1763,6 +1763,25 @@
 		</layout>
 	</dialog>
 
+	<dialog name = 'Monkey2MacDifficultyDialog' overlays = 'screen_center'>
+		<layout type = 'vertical' padding = '0, 0, 8, 8' align = 'center'>
+			<widget name = 'Description'
+					width = '280'
+					height = 'Globals.Line.Height'
+			/>
+			<widget name = 'RegularDescription' />
+			<widget name = 'EasyDescription' />
+			<layout type = 'vertical' padding = '4, 4, 0, 0' spacing = '10' align = 'center'>
+				<widget name = 'Regular'
+						type = 'Button'
+				/>
+				<widget name = 'Easy'
+						type = 'Button'
+				/>
+			</layout>
+		</layout>
+	</dialog>
+
 	<dialog name = 'MassAdd' overlays = 'screen_center' shading = 'dim'>
 		<layout type = 'vertical' padding = '4, 4, 16, 4' align = 'center'>
 			<widget name = 'DirProgressText'

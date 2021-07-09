@@ -1770,6 +1770,35 @@
 		</layout>
 	</dialog>
 
+	<dialog name = 'Monkey2MacDifficultyDialog' overlays = 'screen_center'>
+		<layout type = 'vertical' padding = '8, 8, 8, 8' align = 'center'>
+			<widget name = 'Description'
+					width = '320'
+					height = 'Globals.Line.Height'
+					/>
+			<layout type = 'horizontal' padding = '8, 8, 8, 8'>
+				<layout type = 'vertical' padding = '8, 8, 8, 8' spacing = '12'>
+					<widget name = 'Regular'
+							type = 'Button'
+					/>
+					<widget name = 'Easy'
+							type = 'Button'
+					/>
+				</layout>
+				<layout type = 'vertical' padding = '8, 8, 8, 8' spacing = '12'>
+					<widget name = 'RegularDescription'
+							height = 'Globals.Button.Height'
+							width = '360'
+					/>
+					<widget name = 'EasyDescription'
+							height = 'Globals.Button.Height'
+							width = '360'
+					/>
+				</layout>
+			</layout>
+		</layout>
+	</dialog>
+
 	<dialog name = 'MassAdd' overlays = 'screen_center' shading = 'dim'>
 		<layout type = 'vertical' padding = '8, 8, 32, 8' align = 'center'>
 			<widget name = 'DirProgressText'
