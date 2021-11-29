@@ -79,6 +79,7 @@ struct ImageFrame {
 class ImageFile : public Common::Array<ImageFrame> {
 private:
 	static SherlockEngine *_vm;
+	Common::String _name;
 
 	/**
 	 * Load the data of the sprite

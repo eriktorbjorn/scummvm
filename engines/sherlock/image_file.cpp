@@ -38,6 +38,7 @@ ImageFile::ImageFile() {
 }
 
 ImageFile::ImageFile(const Common::String &name, bool skipPal, bool animImages) {
+	_name = name;
 	Common::SeekableReadStream *stream = _vm->_res->load(name);
 
 	Common::fill(&_palette[0], &_palette[PALETTE_SIZE], 0);
@@ -57,10 +58,24 @@ ImageFile::~ImageFile() {
 }
 
 void ImageFile::load(Common::SeekableReadStream &stream, bool skipPalette, bool animImages) {
+	uint maxFrames = 0;
 	loadPalette(stream);
+
+	if (_name == "59MATCH4.vgs") {
+		// There appears to be garbage at the end of this resource,
+		// which causes ScummVM to crash when trying to decode it.
+		//
+		// Even this limit will include two bad frames to avoid a
+		// glitch at the end of the animation, but these aren't
+		// catastrophically bad.
+		maxFrames = 15;
+	}
 
 	int streamSize = stream.size();
 	while (stream.pos() < streamSize) {
+		if (maxFrames && size() == maxFrames)
+			break;
+
 		ImageFrame frame;
 		frame._width = stream.readUint16LE() + 1;
 		frame._height = stream.readUint16LE() + 1;
