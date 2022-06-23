@@ -205,9 +205,13 @@ void ScummEngine::resetPalette() {
 			else
 				setPaletteFromTable(tableNESNTSCPalette, sizeof(tableNESNTSCPalette) / 3);
 		} else {
-			setPaletteFromTable(tableV1Palette, sizeof(tableV1Palette) / 3);
-			if (_game.id == GID_ZAK)
-				setPalColor(15, 170, 170, 170);
+			if (_renderMode == Common::kRenderCGA) {
+				setPaletteFromTable(tableCGAPalette, sizeof(tableCGAPalette) / 3);
+			} else {
+				setPaletteFromTable(tableV1Palette, sizeof(tableV1Palette) / 3);
+				if (_game.id == GID_ZAK)
+					setPalColor(15, 170, 170, 170);
+			}
 		}
 	} else if (_game.features & GF_16COLOR) {
 		bool setupCursor = false;

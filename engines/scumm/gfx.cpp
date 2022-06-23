@@ -792,6 +792,11 @@ void ScummEngine::drawStripToScreen(VirtScreen *vs, int x, int width, int top, i
 // EGA
 // monkey2 loom maniac monkey1 atlantis indy3 zak loomcd
 
+
+static const byte cgaDitherV1[2][16] = {
+	{0, 3, 2, 1, 2, 1, 0, 3, 2, 0, 2, 3, 3, 2, 1, 3},
+	{0, 3, 0, 1, 2, 1, 1, 1, 2, 2, 2, 0, 3, 2, 1, 0}};
+
 static const byte cgaDither[2][2][16] = {
 	{{0, 1, 0, 1, 2, 2, 0, 0, 3, 1, 3, 1, 3, 2, 1, 3},
 	 {0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 3, 3, 1, 3}},
@@ -805,18 +810,30 @@ void ScummEngine::ditherCGA(byte *dst, int dstPitch, int x, int y, int width, in
 	byte *ptr;
 	int idx1, idx2;
 
-	for (int y1 = 0; y1 < height; y1++) {
-		ptr = dst + y1 * dstPitch;
+	if (_game.version == 1) {
+		for (int y1 = 0; y1 < height; y1++) {
+			ptr = dst + y1 * dstPitch;
 
-		if (_game.version == 2)
-			idx1 = 0;
-		else
-			idx1 = (y + y1) % 2;
+			for (int x1 = 0; x1 < width; x1++) {
+				idx1 = (x + x1) % 2;
+				*ptr = cgaDitherV1[idx1][*ptr & 0xF];
+				ptr++;
+			}
+		}
+	} else {
+		for (int y1 = 0; y1 < height; y1++) {
+			ptr = dst + y1 * dstPitch;
 
-		for (int x1 = 0; x1 < width; x1++) {
-			idx2 = (x + x1) % 2;
-			*ptr = cgaDither[idx1][idx2][*ptr & 0xF];
-			ptr++;
+			if (_game.version <= 2)
+				idx1 = 0;
+			else
+				idx1 = (y + y1) % 2;
+
+			for (int x1 = 0; x1 < width; x1++) {
+				idx2 = (x + x1) % 2;
+				*ptr = cgaDither[idx1][idx2][*ptr & 0xF];
+				ptr++;
+			}
 		}
 	}
 }
