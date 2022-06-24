@@ -945,6 +945,14 @@ void CharsetRendererV3::drawChar(int chr, Graphics::Surface &s, int x, int y) {
 void CharsetRenderer::translateColor() {
 	// Based on disassembly
 	if (_vm->_renderMode == Common::kRenderCGA) {
+		// V1 games use an out-of-palette color for the inventory and
+		// sentence line. Make sure it's mapped to something more sensible
+		// than black.
+		if (_vm->_game.version == 1 && _color == 16) {
+			_color = 4;
+			return;
+		}
+
 		static const byte CGAtextColorMap[16] = {0,  3, 3, 3, 5, 5, 5,  15,
 										   15, 3, 3, 3, 5, 5, 15, 15};
 		_color = CGAtextColorMap[_color & 0x0f];
