@@ -302,6 +302,7 @@ public:
 	}
 
 	void setPalette(int idx, int val) {
+debug("setPalette(%d, %d)", idx, val);
 		_palette[idx] = val;
 		_needRedraw = true;
 	}

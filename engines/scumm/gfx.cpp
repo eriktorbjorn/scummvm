@@ -797,7 +797,17 @@ static const byte cgaDitherV1[2][16] = {
 	{0, 3, 2, 1, 2, 1, 0, 3, 2, 0, 2, 3, 3, 2, 1, 3},
 	{0, 3, 0, 1, 2, 1, 1, 1, 2, 2, 2, 0, 3, 2, 1, 0}};
 
-static const byte cgaDither[2][2][16] = {
+#if 0
+static const byte cgaDitherV2[2][16] = {
+	{0, 1, 0, 1, 2, 2, 0, 0, 3, 1, 3, 1, 3, 2, 1, 3},
+	{0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 2, 3, 1, 3}};
+#else
+static const byte cgaDitherV2[2][16] = {
+	{0, 1, 0, 1, 2, 0, 0, 3, 3, 0, 0, 1, 3, 0, 3, 3},
+	{0, 0, 1, 1, 0, 0, 2, 3, 0, 0, 0, 1, 2, 0, 1, 3}};
+#endif
+
+static const byte cgaDitherV3[2][2][16] = {
 	{{0, 1, 0, 1, 2, 2, 0, 0, 3, 1, 3, 1, 3, 2, 1, 3},
 	 {0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 3, 3, 1, 3}},
 	{{0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 3, 3, 1, 3},
@@ -820,18 +830,24 @@ void ScummEngine::ditherCGA(byte *dst, int dstPitch, int x, int y, int width, in
 				ptr++;
 			}
 		}
-	} else {
+	} else if (_game.version == 2) {
 		for (int y1 = 0; y1 < height; y1++) {
 			ptr = dst + y1 * dstPitch;
 
-			if (_game.version <= 2)
-				idx1 = 0;
-			else
-				idx1 = (y + y1) % 2;
+			for (int x1 = 0; x1 < width; x1++) {
+				idx1 = (x + x1) % 2;
+				*ptr = cgaDitherV2[idx1][*ptr & 0xF];
+				ptr++;
+			}
+		}
+	} else {
+		for (int y1 = 0; y1 < height; y1++) {
+			ptr = dst + y1 * dstPitch;
+			idx1 = (y + y1) % 2;
 
 			for (int x1 = 0; x1 < width; x1++) {
 				idx2 = (x + x1) % 2;
-				*ptr = cgaDither[idx1][idx2][*ptr & 0xF];
+				*ptr = cgaDitherV3[idx1][idx2][*ptr & 0xF];
 				ptr++;
 			}
 		}
@@ -861,7 +877,7 @@ void ditherHerc(byte *src, byte *hercbuf, int srcPitch, int *x, int *y, int *wid
 		const int idx1 = (dsty % 7) % 2;
 		for (int x1 = 0; x1 < widtho; x1++) {
 			const int idx2 = (xo + x1) % 2;
-			const byte tmp = cgaDither[idx1][idx2][*srcptr & 0xF];
+			const byte tmp = cgaDitherV3[idx1][idx2][*srcptr & 0xF];
 			*dstptr++ = tmp >> 1;
 			*dstptr++ = tmp & 0x1;
 			srcptr++;
